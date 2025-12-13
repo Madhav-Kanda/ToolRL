@@ -1,0 +1,10 @@
+dataset_jsonl: data/swebench/lite_normalized.jsonl
+cache_dir: data/swebench/repos_cache
+work_dir: data/swebench/episodes
+subset_limit: 50
+default_test_cmd: pytest -q
+clone_timeout_s: 900
+test_timeout_s: 180
+shuffle: true
+seed: 42
+

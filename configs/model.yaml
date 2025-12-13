@@ -1,0 +1,7 @@
+model_name: Qwen/Qwen2.5-Coder-7B-Instruct
+load_in_4bit: true
+bf16: true
+temperature: 0.2
+top_p: 0.9
+max_new_tokens: 256
+
