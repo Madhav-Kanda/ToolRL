@@ -1,7 +1,11 @@
 model_name: Qwen/Qwen2.5-Coder-7B-Instruct
-load_in_4bit: true
+backend: vllm  # "vllm" (fast inference) or "hf" (HuggingFace, needed for training/adapters)
+load_in_4bit: true  # only used with hf backend
 bf16: true
 temperature: 0.2
 top_p: 0.9
 max_new_tokens: 256
-
+adapters_path: ""  # optional PEFT adapters directory (e.g., outputs/sft_lora or outputs/dpo_lora)
+# vLLM specific
+tensor_parallel_size: 2  # use both GPUs for faster inference
+gpu_memory_utilization: 0.85

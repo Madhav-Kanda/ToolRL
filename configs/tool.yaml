@@ -1,0 +1,17 @@
+dataset_jsonl: data/tooluse/apibank.jsonl
+subset_limit: 0
+max_calls: 5
+timeout_s: 60
+tools_enabled:
+  - calculator
+  - retriever
+  - calendar
+  - weather
+  - sqldb
+metrics:
+  exact_match: true
+  regex_match: false
+retriever:
+  corpus_jsonl: data/tooluse/corpus.jsonl
+  top_k: 3
+

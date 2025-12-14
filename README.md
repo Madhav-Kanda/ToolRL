@@ -1,33 +1,33 @@
-# RL Code Repair (SWE-bench Lite)
+# Tool-Use Agent (ToolBench-style)
 
-An agent that reads an issue/task spec, searches a codebase, proposes unified diff patches, runs tests (`pytest`), and iterates. The project targets SWE-bench Lite and includes scaffolding for SFT → DPO → light PPO/GRPO with QLoRA on Qwen2.5-Coder-7B-Instruct.
+An agent that solves natural-language tasks by calling offline tools (calculator, retriever, calendar, weather, SQLite). Includes scaffolding for SFT → DPO → light PPO/GRPO with QLoRA on Qwen2.5-Coder-7B-Instruct.
 
 ## Quickstart
 
 ```bash
-# 1) Setup environment
+# 1) Setup
 bash scripts/setup_env.sh
 
-# 2) (Optional) Prepare SWE-bench Lite normalized specs
-bash scripts/prepare_swe_lite.sh
+# 2) Prepare tool-use demo data
+bash scripts/prepare_tool_data.sh
 
-# 3) Run a baseline agent evaluation on a small subset
-bash scripts/run_baseline.sh
+# 3) Run baseline on tool-use subset
+bash scripts/run_baseline_tool.sh
 ```
 
 ## Repository Layout
 
-- configs/: model/env/train configs
-- agent/: prompts, policy wrapper, tools, agent loop
-- envs/swebench/: dataset loader, harness, verifier, sandbox
+- configs/: model/tool configs
+- agent/: prompts, policy wrapper, memory, parsing helpers
+- envs/tooluse/: dataset loader, tool registry, validators, harness, trajectory
 - policy/: model loading & training scripts (SFT/DPO/PPO)
-- eval/: evaluation runner and metrics
+- eval/: evaluation runners and metrics
 - scripts/: helper bash scripts
-- data/: caches and generated artifacts
+- data/: datasets, corpus, outputs
 
 ## Notes
 
-- You will need Git, Python 3.10+, and optionally a GPU with ~24GB VRAM for fastest runs (QLoRA).
-- SWE-bench Lite may require network to clone repos for episodes; you can pre-cache repositories to avoid repeated downloads.
+- You will need Python 3.10+ and a GPU with ~24GB VRAM recommended (QLoRA).
+- Tool-use is fully offline and deterministic for PPO rewards.
 
 
