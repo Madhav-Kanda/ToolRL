@@ -51,22 +51,40 @@ class Policy:
     
     def _init_hf(self):
         """Initialize HuggingFace transformers (for training or when adapters are needed)."""
-        from transformers import AutoTokenizer, AutoModelForCausalLM
+        import torch
+        from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
         from peft import PeftModel
         
         model_name = self.cfg["model_name"]
         print(f"[Model] Loading {model_name} with HF (4bit={self.cfg.get('load_in_4bit', False)}) ...", flush=True)
         
         self.tok = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-        kwargs = {}
+        if self.tok.pad_token is None:
+            self.tok.pad_token = self.tok.eos_token
+        
+        # Use BitsAndBytesConfig for proper 4-bit quantization (matches training)
+        kwargs = {"device_map": "auto"}
         if self.cfg.get("load_in_4bit", False):
-            kwargs["load_in_4bit"] = True
-        self.model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", **kwargs)
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_use_double_quant=True,
+            )
+            kwargs["quantization_config"] = bnb_config
+            kwargs["torch_dtype"] = torch.bfloat16
+        
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
         
         adapters = (self.cfg.get("adapters_path") or "").strip()
-        if adapters:
+        if adapters and os.path.isdir(adapters):
             print(f"[Model] Loading adapters from {adapters} ...", flush=True)
             self.model = PeftModel.from_pretrained(self.model, adapters)
+            self.model = self.model.merge_and_unload()  # Merge for faster inference
+            print("[Model] Adapters merged.", flush=True)
+        elif adapters:
+            print(f"[Model] Warning: Adapter path '{adapters}' not found, using base model.", flush=True)
+        
         self.model.eval()
         print("[Model] HF loaded.", flush=True)
 
