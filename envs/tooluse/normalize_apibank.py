@@ -134,7 +134,14 @@ def download_and_process_file(filename: str, cache_dir: Path) -> List[Dict[str, 
         return []
 
 
-def main(out_path: str, include_train: bool = False):
+def main(out_path: str, split: str = "both"):
+    """
+    Download and normalize API-Bank dataset.
+    
+    Args:
+        out_path: Base output path (will create train.jsonl and test.jsonl if split != "both")
+        split: "train", "test", or "both" (creates separate files)
+    """
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     cache_dir = out.parent / "hf_cache"
@@ -142,37 +149,71 @@ def main(out_path: str, include_train: bool = False):
     
     print("[normalize_apibank] Downloading API-Bank files from Hugging Face...")
     
-    files_to_process = TEST_FILES.copy()
-    if include_train:
-        files_to_process.extend(TRAIN_FILES)
+    # Process train and test separately to avoid data leakage
+    train_records = []
+    test_records = []
     
-    all_records = []
-    for filename in files_to_process:
-        print(f"  Processing {filename}...")
-        records = download_and_process_file(filename, cache_dir)
-        all_records.extend(records)
-        print(f"    -> {len(records)} records")
+    if split in ("train", "both"):
+        print("  === TRAINING DATA ===")
+        for filename in TRAIN_FILES:
+            print(f"  Processing {filename}...")
+            records = download_and_process_file(filename, cache_dir)
+            train_records.extend(records)
+            print(f"    -> {len(records)} records")
+    
+    if split in ("test", "both"):
+        print("  === TEST DATA ===")
+        for filename in TEST_FILES:
+            print(f"  Processing {filename}...")
+            records = download_and_process_file(filename, cache_dir)
+            test_records.extend(records)
+            print(f"    -> {len(records)} records")
     
     # Filter out records with empty questions
-    valid_records = [r for r in all_records if r["question"].strip()]
+    train_records = [r for r in train_records if r["question"].strip()]
+    test_records = [r for r in test_records if r["question"].strip()]
     
-    with out.open("w", encoding="utf-8") as w:
-        for rec in valid_records:
-            w.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    
-    print(f"[normalize_apibank] Wrote {len(valid_records)} records to {out}")
+    # Write output files
+    if split == "both":
+        # Create separate train and test files
+        train_path = out.parent / "apibank_train.jsonl"
+        test_path = out.parent / "apibank_test.jsonl"
+        
+        with train_path.open("w", encoding="utf-8") as w:
+            for rec in train_records:
+                w.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        print(f"[normalize_apibank] Wrote {len(train_records)} TRAIN records to {train_path}")
+        
+        with test_path.open("w", encoding="utf-8") as w:
+            for rec in test_records:
+                w.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        print(f"[normalize_apibank] Wrote {len(test_records)} TEST records to {test_path}")
+        
+        # Also write combined file for backwards compatibility
+        with out.open("w", encoding="utf-8") as w:
+            for rec in test_records:  # Default to test for evaluation
+                w.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    else:
+        records = train_records if split == "train" else test_records
+        with out.open("w", encoding="utf-8") as w:
+            for rec in records:
+                w.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        print(f"[normalize_apibank] Wrote {len(records)} records to {out}")
     
     # Print breakdown by level
-    by_level = {}
-    for r in valid_records:
-        lv = r.get("level", "?")
-        by_level[lv] = by_level.get(lv, 0) + 1
-    print(f"  Breakdown by level: {by_level}")
+    for name, records in [("Train", train_records), ("Test", test_records)]:
+        if records:
+            by_level = {}
+            for r in records:
+                lv = r.get("level", "?")
+                by_level[lv] = by_level.get(lv, 0) + 1
+            print(f"  {name} breakdown by level: {by_level}")
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="data/tooluse/apibank.jsonl", help="Output JSONL path")
-    ap.add_argument("--include-train", action="store_true", help="Also include training data")
+    ap.add_argument("--split", default="both", choices=["train", "test", "both"],
+                    help="Which split to download: train, test, or both (creates separate files)")
     args = ap.parse_args()
-    main(args.out, args.include_train)
+    main(args.out, args.split)

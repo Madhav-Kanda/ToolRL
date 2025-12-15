@@ -1,4 +1,4 @@
-dataset_jsonl: data/tooluse/apibank.jsonl
+dataset_jsonl: data/tooluse/apibank_test.jsonl
 subset_limit: 0
 max_calls: 5
 timeout_s: 60
