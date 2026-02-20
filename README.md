@@ -1,6 +1,6 @@
 # Tool-Use Agent (ToolBench-style)
 
-An agent that solves natural-language tasks by calling offline tools (calculator, retriever, calendar, weather, SQLite). Includes scaffolding for SFT → DPO → light PPO/GRPO with QLoRA on Qwen2.5-Coder-7B-Instruct.
+An agent that solves natural-language tasks by calling offline tools (calculator, retriever, calendar, weather, SQLite). Includes scaffolding for SFT → DPO with QLoRA on Qwen2.5-Coder-7B-Instruct.
 
 ## Quickstart
 
@@ -28,6 +28,4 @@ bash scripts/run_baseline_tool.sh
 ## Notes
 
 - You will need Python 3.10+ and a GPU with ~24GB VRAM recommended (QLoRA).
-- Tool-use is fully offline and deterministic for PPO rewards.
-
 
